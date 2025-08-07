@@ -37,6 +37,8 @@ Copy the output - you'll need it for Render.
 - **Start Command**: `npm start`
 - **Plan**: `Free` (or paid for better performance)
 
+**Important:** Make sure Build Command is `npm install && npm run build` (not `npm ci --only=production`)
+
 ### ✅ 6. Advanced Settings
 - **Health Check Path**: `/health`
 - **Auto-Deploy**: `Yes` (deploys on git push)
