@@ -70,26 +70,11 @@ router.get('/', async (req: any, res: Response) => {
       .skip(skip)
       .limit(limitNum)
 
-    console.log('🔍 Server: First note from DB (with toJSON):', notes[0])
-    
-    // Only try to parse JSON if we have notes
-    if (notes.length > 0) {
-      console.log('🔍 Server: First note JSON serialized:', JSON.parse(JSON.stringify(notes[0])))
-    } else {
-      console.log('🔍 Server: No notes found in database')
-    }
-
     // Get total count for pagination
     const total = await Note.countDocuments(query)
 
     // Manually serialize notes to ensure toJSON transform is applied
     const serializedNotes = notes.map(note => note.toJSON())
-    
-    if (serializedNotes.length > 0) {
-      console.log('🔍 Server: First serialized note:', serializedNotes[0])
-    } else {
-      console.log('🔍 Server: No notes to serialize')
-    }
 
     sendSuccessResponse(res, {
       notes: serializedNotes,

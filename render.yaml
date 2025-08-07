@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: notes-studio-server
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: BCRYPT_ROUNDS
+        value: 12
+      - key: RATE_LIMIT_WINDOW
+        value: 15
+      - key: RATE_LIMIT_MAX
+        value: 100
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: notes-studio-client
+          property: url
+        # Fallback if no client service
+        # value: https://your-frontend-domain.com
+    # Add your MongoDB Atlas connection string in Render dashboard
+    # MONGODB_URI will need to be set manually in Render dashboard

@@ -119,7 +119,34 @@ npm run build
 npm start
 ```
 
-## 📚 API Documentation
+## � Deployment
+
+### Deploy to Render (Recommended)
+
+1. **Quick Setup**: Follow the step-by-step guide in [`DEPLOYMENT_CHECKLIST.md`](./DEPLOYMENT_CHECKLIST.md)
+
+2. **Detailed Guide**: See [`RENDER_DEPLOYMENT.md`](./RENDER_DEPLOYMENT.md) for comprehensive instructions
+
+3. **One-Click Deploy**: Use the `render.yaml` configuration file for infrastructure-as-code deployment
+
+**Prerequisites:**
+- MongoDB Atlas account (free tier available)
+- GitHub repository
+- Render account (free tier available)
+
+**Environment Variables Required:**
+- `MONGODB_URI` - MongoDB Atlas connection string
+- `JWT_SECRET` - Secure random string (64 characters)
+- `NODE_ENV=production`
+- `CORS_ORIGIN` - Your frontend URL
+
+### Other Deployment Options
+
+- **Docker**: Use the included `Dockerfile` for containerized deployment
+- **Heroku, Railway, Fly.io**: Compatible with most Node.js hosting platforms
+- **VPS**: Can be deployed on any server with Node.js and PM2
+
+## �📚 API Documentation
 
 ### Base URL
 ```
