@@ -36,11 +36,11 @@ router.get('/folders', async (req: Request, res: Response) => {
       return sendSuccessResponse(res, { folders: foldersWithCount })
     }
 
-    sendSuccessResponse(res, { folders })
+    return sendSuccessResponse(res, { folders })
 
   } catch (error: any) {
     console.error('Get public folders error:', error)
-    sendErrorResponse(res, 'Failed to fetch public folders', 500)
+    return sendErrorResponse(res, 'Failed to fetch public folders', 500)
   }
 })
 
@@ -108,11 +108,11 @@ router.get('/folders/:slug', async (req: Request, res: Response) => {
       }
     }
 
-    sendSuccessResponse(res, response)
+    return sendSuccessResponse(res, response)
 
   } catch (error: any) {
     console.error('Get public folder error:', error)
-    sendErrorResponse(res, 'Failed to fetch public folder', 500)
+    return sendErrorResponse(res, 'Failed to fetch public folder', 500)
   }
 })
 
@@ -145,7 +145,7 @@ router.get('/folders/:folderSlug/notes/:noteSlug', async (req: Request, res: Res
       return sendErrorResponse(res, 'Public note not found', 404)
     }
 
-    sendSuccessResponse(res, { 
+    return sendSuccessResponse(res, { 
       note: {
         ...note,
         author: note.userId,
@@ -155,7 +155,7 @@ router.get('/folders/:folderSlug/notes/:noteSlug', async (req: Request, res: Res
 
   } catch (error: any) {
     console.error('Get public note error:', error)
-    sendErrorResponse(res, 'Failed to fetch public note', 500)
+    return sendErrorResponse(res, 'Failed to fetch public note', 500)
   }
 })
 
@@ -196,7 +196,7 @@ router.get('/search', async (req: Request, res: Response) => {
       Note.countDocuments(searchQuery)
     ])
 
-    sendSuccessResponse(res, {
+    return sendSuccessResponse(res, {
       notes: notes.map(note => ({
         ...note,
         author: note.userId,
@@ -214,7 +214,7 @@ router.get('/search', async (req: Request, res: Response) => {
 
   } catch (error: any) {
     console.error('Search public notes error:', error)
-    sendErrorResponse(res, 'Failed to search public notes', 500)
+    return sendErrorResponse(res, 'Failed to search public notes', 500)
   }
 })
 

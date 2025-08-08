@@ -127,11 +127,11 @@ router.get('/search', validate(searchNotesValidation), async (req: any, res: Res
       .limit(parseInt(limit as string))
       .lean()
 
-    sendSuccessResponse(res, { notes })
+    return sendSuccessResponse(res, { notes })
 
   } catch (error: any) {
     console.error('Search notes error:', error)
-    sendErrorResponse(res, 'Failed to search notes', 500)
+    return sendErrorResponse(res, 'Failed to search notes', 500)
   }
 })
 
@@ -147,11 +147,11 @@ router.get('/:id', async (req: any, res: Response) => {
       return sendErrorResponse(res, 'Note not found', 404)
     }
 
-    sendSuccessResponse(res, { note })
+    return sendSuccessResponse(res, { note })
 
   } catch (error: any) {
     console.error('Get note error:', error)
-    sendErrorResponse(res, 'Failed to fetch note', 500)
+    return sendErrorResponse(res, 'Failed to fetch note', 500)
   }
 })
 
@@ -194,11 +194,11 @@ router.post('/', validate(createNoteValidation), async (req: any, res: Response)
     // Populate folder information
     await note.populate('folderId', 'name color slug')
 
-    sendSuccessResponse(res, { note }, 'Note created successfully', 201)
+    return sendSuccessResponse(res, { note }, 'Note created successfully', 201)
 
   } catch (error: any) {
     console.error('Create note error:', error)
-    sendErrorResponse(res, 'Failed to create note', 500)
+    return sendErrorResponse(res, 'Failed to create note', 500)
   }
 })
 
@@ -256,11 +256,11 @@ router.put('/:id', validate(updateNoteValidation), async (req: any, res: Respons
     // Populate folder information
     await note.populate('folderId', 'name color slug')
 
-    sendSuccessResponse(res, { note }, 'Note updated successfully')
+    return sendSuccessResponse(res, { note }, 'Note updated successfully')
 
   } catch (error: any) {
     console.error('Update note error:', error)
-    sendErrorResponse(res, 'Failed to update note', 500)
+    return sendErrorResponse(res, 'Failed to update note', 500)
   }
 })
 
@@ -276,11 +276,11 @@ router.delete('/:id', async (req: any, res: Response) => {
       return sendErrorResponse(res, 'Note not found', 404)
     }
 
-    sendSuccessResponse(res, {}, 'Note deleted successfully')
+    return sendSuccessResponse(res, {}, 'Note deleted successfully')
 
   } catch (error: any) {
     console.error('Delete note error:', error)
-    sendErrorResponse(res, 'Failed to delete note', 500)
+    return sendErrorResponse(res, 'Failed to delete note', 500)
   }
 })
 
@@ -359,13 +359,13 @@ router.post('/bulk', async (req: any, res: Response) => {
         return sendErrorResponse(res, 'Invalid action', 400)
     }
 
-    sendSuccessResponse(res, { 
+    return sendSuccessResponse(res, { 
       modifiedCount: (result as any).modifiedCount || (result as any).deletedCount 
     }, `Bulk ${action} completed successfully`)
 
   } catch (error: any) {
     console.error('Bulk operation error:', error)
-    sendErrorResponse(res, 'Bulk operation failed', 500)
+    return sendErrorResponse(res, 'Bulk operation failed', 500)
   }
 })
 

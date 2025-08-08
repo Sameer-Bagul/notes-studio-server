@@ -116,11 +116,11 @@ router.get('/:id', async (req: any, res: Response) => {
       result.notes = notes
     }
 
-    sendSuccessResponse(res, result)
+    return sendSuccessResponse(res, result)
 
   } catch (error: any) {
     console.error('Get folder error:', error)
-    sendErrorResponse(res, 'Failed to fetch folder', 500)
+    return sendErrorResponse(res, 'Failed to fetch folder', 500)
   }
 })
 
@@ -202,11 +202,11 @@ router.put('/:id', validate(updateFolderValidation), async (req: any, res: Respo
 
     await folder.save()
 
-    sendSuccessResponse(res, { folder }, 'Folder updated successfully')
+    return sendSuccessResponse(res, { folder }, 'Folder updated successfully')
 
   } catch (error: any) {
     console.error('Update folder error:', error)
-    sendErrorResponse(res, 'Failed to update folder', 500)
+    return sendErrorResponse(res, 'Failed to update folder', 500)
   }
 })
 
@@ -260,14 +260,14 @@ router.delete('/:id', async (req: any, res: Response) => {
     // Delete the folder
     await Folder.findByIdAndDelete(folder._id)
 
-    sendSuccessResponse(res, { 
+    return sendSuccessResponse(res, { 
       deletedFolder: folder._id,
       movedNotesCount: notesInFolder.length 
     }, 'Folder deleted successfully')
 
   } catch (error: any) {
     console.error('Delete folder error:', error)
-    sendErrorResponse(res, 'Failed to delete folder', 500)
+    return sendErrorResponse(res, 'Failed to delete folder', 500)
   }
 })
 
@@ -294,14 +294,14 @@ router.put('/reorder', async (req: any, res: Response) => {
     // Filter out null results (folders not found)
     const validFolders = updatedFolders.filter(folder => folder !== null)
 
-    sendSuccessResponse(res, { 
+    return sendSuccessResponse(res, { 
       folders: validFolders,
       updatedCount: validFolders.length 
     }, 'Folders reordered successfully')
 
   } catch (error: any) {
     console.error('Reorder folders error:', error)
-    sendErrorResponse(res, 'Failed to reorder folders', 500)
+    return sendErrorResponse(res, 'Failed to reorder folders', 500)
   }
 })
 
@@ -364,11 +364,11 @@ router.get('/:id/stats', async (req: any, res: Response) => {
       }))
     }
 
-    sendSuccessResponse(res, { stats })
+    return sendSuccessResponse(res, { stats })
 
   } catch (error: any) {
     console.error('Get folder stats error:', error)
-    sendErrorResponse(res, 'Failed to get folder statistics', 500)
+    return sendErrorResponse(res, 'Failed to get folder statistics', 500)
   }
 })
 
@@ -394,11 +394,11 @@ router.put('/:id/deploy', async (req: any, res: Response) => {
     await folder.save()
 
     const action = isDeployed ? 'deployed' : 'undeployed'
-    sendSuccessResponse(res, { folder }, `Folder ${action} successfully`)
+    return sendSuccessResponse(res, { folder }, `Folder ${action} successfully`)
 
   } catch (error: any) {
     console.error('Toggle deployment error:', error)
-    sendErrorResponse(res, 'Failed to toggle folder deployment', 500)
+    return sendErrorResponse(res, 'Failed to toggle folder deployment', 500)
   }
 })
 

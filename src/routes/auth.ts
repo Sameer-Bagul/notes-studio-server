@@ -1,7 +1,6 @@
-import express from 'express'
+import express, { Request, Response, NextFunction } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { Request, Response } from 'express'
 import User from '../models/User'
 import { protect } from '../middleware/auth'
 import { validate } from '../middleware/validation'
@@ -20,17 +19,14 @@ router.post('/register', validate(registerValidation), async (req: Request, res:
   try {
     const { name, email, password } = req.body
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email })
     if (existingUser) {
       return sendErrorResponse(res, 'User already exists with this email', 400)
     }
 
-    // Create new user
     const user = new User({ name, email, password })
     await user.save()
 
-    // Generate JWT token
     const secret = process.env.JWT_SECRET as string
     const token = jwt.sign(
       { userId: (user._id as any).toString() },
@@ -60,25 +56,21 @@ router.post('/login', validate(loginValidation), async (req: Request, res: Respo
   try {
     const { email, password } = req.body
 
-    // Find user and include password for comparison
     const user = await User.findOne({ email }).select('+password')
     if (!user) {
       return sendErrorResponse(res, 'Invalid email or password', 401)
     }
 
-    // Check password
     const isMatch = await user.comparePassword(password)
     if (!isMatch) {
       return sendErrorResponse(res, 'Invalid email or password', 401)
     }
 
-    // Update last login
     if (user.lastLoginAt !== undefined) {
       user.lastLoginAt = new Date()
       await user.save()
     }
 
-    // Generate JWT token
     const secret = process.env.JWT_SECRET as string
     const token = jwt.sign(
       { userId: (user._id as any).toString() },
@@ -104,9 +96,14 @@ router.post('/login', validate(loginValidation), async (req: Request, res: Respo
 })
 
 // Get current user profile
-router.get('/me', protect, async (req: Request, res: Response) => {
+router.get('/me', protect, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findById((req as any).user.id)
+    const authReq = req as AuthRequest
+    if (!authReq.user) {
+      return sendErrorResponse(res, 'Unauthorized', 401)
+    }
+
+    const user = await User.findById(authReq.user.id)
     if (!user) {
       return sendErrorResponse(res, 'User not found', 404)
     }
@@ -128,16 +125,20 @@ router.get('/me', protect, async (req: Request, res: Response) => {
 })
 
 // Update user profile
-router.put('/me', protect, validate(updateProfileValidation), async (req: Request, res: Response) => {
+router.put('/me', protect, validate(updateProfileValidation), async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const authReq = req as AuthRequest
+    if (!authReq.user) {
+      return sendErrorResponse(res, 'Unauthorized', 401)
+    }
+
     const { name, preferences } = req.body
     
-    const user = await User.findById((req as any).user.id)
+    const user = await User.findById(authReq.user.id)
     if (!user) {
       return sendErrorResponse(res, 'User not found', 404)
     }
 
-    // Update user fields
     if (name) user.name = name
     if (preferences) {
       user.preferences = { ...user.preferences, ...preferences }
@@ -162,8 +163,13 @@ router.put('/me', protect, validate(updateProfileValidation), async (req: Reques
 })
 
 // Change password
-router.put('/change-password', protect, async (req: Request, res: Response) => {
+router.put('/change-password', protect, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const authReq = req as AuthRequest
+    if (!authReq.user) {
+      return sendErrorResponse(res, 'Unauthorized', 401)
+    }
+
     const { currentPassword, newPassword } = req.body
 
     if (!currentPassword || !newPassword) {
@@ -174,18 +180,16 @@ router.put('/change-password', protect, async (req: Request, res: Response) => {
       return sendErrorResponse(res, 'New password must be at least 6 characters long', 400)
     }
 
-    const user = await User.findById((req as any).user.id).select('+password')
+    const user = await User.findById(authReq.user.id).select('+password')
     if (!user) {
       return sendErrorResponse(res, 'User not found', 404)
     }
 
-    // Verify current password
     const isMatch = await user.comparePassword(currentPassword)
     if (!isMatch) {
       return sendErrorResponse(res, 'Current password is incorrect', 400)
     }
 
-    // Update password
     user.password = newPassword
     await user.save()
 
@@ -198,14 +202,19 @@ router.put('/change-password', protect, async (req: Request, res: Response) => {
 })
 
 // Delete account
-router.delete('/me', protect, async (req: Request, res: Response) => {
+router.delete('/me', protect, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findById((req as any).user.id)
+    const authReq = req as AuthRequest
+    if (!authReq.user) {
+      return sendErrorResponse(res, 'Unauthorized', 401)
+    }
+
+    const user = await User.findById(authReq.user.id)
     if (!user) {
       return sendErrorResponse(res, 'User not found', 404)
     }
 
-    await User.findByIdAndDelete((req as any).user.id)
+    await User.findByIdAndDelete(authReq.user.id)
     
     return sendSuccessResponse(res, {}, 'Account deleted successfully')
 
