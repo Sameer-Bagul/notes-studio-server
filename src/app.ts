@@ -15,6 +15,9 @@ import publicRoutes from './routes/public'
 const createApp = () => {
   const app = express()
 
+  // Trust reverse proxy for rate limiting (Render requirement)
+  app.set('trust proxy', 1)
+
   // Friendly root route
   app.get('/', (req, res) => {
     res.send('Notes Studio API server is up and running!')
