@@ -52,12 +52,12 @@ const noteSchema = new Schema<INoteDocument>({
   timestamps: true,
   toJSON: {
     transform: function(doc, ret) {
-      ret.id = ret._id
-      ret.content = ret.content_html // Map content_html to content for frontend
-      delete ret._id
-      delete ret.__v
-      delete ret.content_html // Remove the original content_html field
-      return ret
+  ret.id = ret._id
+  ret.content = ret.content_html ?? '' // Map content_html to content for frontend, fallback to empty string
+  delete ret._id
+  delete (ret as any).__v
+  delete ret.content_html // Remove the original content_html field
+  return ret
     }
   }
 })

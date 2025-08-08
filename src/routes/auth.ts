@@ -104,9 +104,9 @@ router.post('/login', validate(loginValidation), async (req: Request, res: Respo
 })
 
 // Get current user profile
-router.get('/me', protect, async (req: any, res: Response) => {
+router.get('/me', protect, async (req: Request, res: Response) => {
   try {
-    const user = await User.findById(req.user.id)
+    const user = await User.findById((req as any).user.id)
     if (!user) {
       return sendErrorResponse(res, 'User not found', 404)
     }
@@ -128,11 +128,11 @@ router.get('/me', protect, async (req: any, res: Response) => {
 })
 
 // Update user profile
-router.put('/me', protect, validate(updateProfileValidation), async (req: any, res: Response) => {
+router.put('/me', protect, validate(updateProfileValidation), async (req: Request, res: Response) => {
   try {
     const { name, preferences } = req.body
     
-    const user = await User.findById(req.user.id)
+    const user = await User.findById((req as any).user.id)
     if (!user) {
       return sendErrorResponse(res, 'User not found', 404)
     }
@@ -162,7 +162,7 @@ router.put('/me', protect, validate(updateProfileValidation), async (req: any, r
 })
 
 // Change password
-router.put('/change-password', protect, async (req: any, res: Response) => {
+router.put('/change-password', protect, async (req: Request, res: Response) => {
   try {
     const { currentPassword, newPassword } = req.body
 
@@ -174,7 +174,7 @@ router.put('/change-password', protect, async (req: any, res: Response) => {
       return sendErrorResponse(res, 'New password must be at least 6 characters long', 400)
     }
 
-    const user = await User.findById(req.user.id).select('+password')
+    const user = await User.findById((req as any).user.id).select('+password')
     if (!user) {
       return sendErrorResponse(res, 'User not found', 404)
     }
@@ -198,14 +198,14 @@ router.put('/change-password', protect, async (req: any, res: Response) => {
 })
 
 // Delete account
-router.delete('/me', protect, async (req: any, res: Response) => {
+router.delete('/me', protect, async (req: Request, res: Response) => {
   try {
-    const user = await User.findById(req.user.id)
+    const user = await User.findById((req as any).user.id)
     if (!user) {
       return sendErrorResponse(res, 'User not found', 404)
     }
 
-    await User.findByIdAndDelete(req.user.id)
+    await User.findByIdAndDelete((req as any).user.id)
     
     return sendSuccessResponse(res, {}, 'Account deleted successfully')
 

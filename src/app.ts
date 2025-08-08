@@ -15,6 +15,11 @@ import publicRoutes from './routes/public'
 const createApp = () => {
   const app = express()
 
+  // Friendly root route
+  app.get('/', (req, res) => {
+    res.send('Notes Studio API server is up and running!')
+  })
+
   // Security middleware
   app.use(helmet())
   
@@ -93,6 +98,15 @@ const createApp = () => {
 
   // Error handler
   app.use(errorHandler)
+
+  // Catch-all route for unmatched paths
+  app.use('*', (req, res) => {
+    res.status(404).json({
+      success: false,
+      message: 'An error occurred while processing your request',
+      error: `Not Found - ${req.originalUrl}`
+    })
+  })
 
   return app
 }
