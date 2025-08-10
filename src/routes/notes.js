@@ -16,7 +16,7 @@ router.use(protect);
 // Get all notes for the user
 router.get('/', async (req, res) => {
   try {
-    const { page = 1, limit = 20, search, folderId, tags, sortBy = 'updatedAt', sortOrder = 'desc', isPinned, isArchived } = req.query;
+    const { page = 1, limit = 20, search, folderId, tags, sortBy, sortOrder = 'asc', isPinned, isArchived } = req.query;
     const query = { userId: req.user.id };
     if (folderId) query.folderId = folderId;
     if (tags) query.tags = { $in: Array.isArray(tags) ? tags : [tags] };
@@ -31,7 +31,9 @@ router.get('/', async (req, res) => {
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const skip = (pageNum - 1) * limitNum;
-    const sortConfig = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+    // Default sort by 'order' unless sortBy is specified
+    const sortField = sortBy || 'order';
+    const sortConfig = { [sortField]: sortOrder === 'asc' ? 1 : -1 };
     const notes = await Note.find(query)
       .sort(sortConfig)
       .skip(skip)
@@ -77,6 +79,9 @@ router.post('/', validate(createNoteSchema), async (req, res) => {
     const slug = generateSlug(slugBase);
     // Convert empty string folderId to null for root notes
     const safeFolderId = !folderId || folderId === '' ? null : folderId;
+    // Find the max order for notes in the same folder (or root)
+    const maxOrderNote = await Note.findOne({ userId: req.user.id, folderId: safeFolderId }).sort({ order: -1 });
+    const nextOrder = typeof maxOrderNote?.order === 'number' ? maxOrderNote.order + 1 : 0;
     const note = new Note({
       title,
       content,
@@ -85,12 +90,13 @@ router.post('/', validate(createNoteSchema), async (req, res) => {
       slug,
       tags: tags || [],
       color: color || null,
+      order: nextOrder,
     });
     await note.save();
-  const noteObj = note.toObject();
-  noteObj.id = noteObj._id;
-  noteObj._id = noteObj._id;
-  sendSuccessResponse(res, { note: noteObj }, 'Note created', 201);
+    const noteObj = note.toObject();
+    noteObj.id = noteObj._id;
+    noteObj._id = noteObj._id;
+    sendSuccessResponse(res, { note: noteObj }, 'Note created', 201);
   } catch (error) {
     console.error('Note creation error:', error);
     sendErrorResponse(res, error.message || 'Failed to create note', 500);
@@ -135,6 +141,31 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Bulk reorder notes
+router.post('/bulk', async (req, res) => {
+  try {
+    const { action, noteIds, data } = req.body;
+    if (action !== 'reorder' || !Array.isArray(data.noteOrders)) {
+      return sendErrorResponse(res, 'Invalid bulk reorder request', 400);
+    }
+    // Only update notes belonging to the current user
+    const bulkOps = data.noteOrders.map(({ noteId, order }) => ({
+      updateOne: {
+        filter: { _id: noteId, userId: req.user.id },
+        update: { $set: { order } }
+      }
+    }));
+    if (bulkOps.length === 0) {
+      return sendErrorResponse(res, 'No notes to reorder', 400);
+    }
+    await Note.bulkWrite(bulkOps);
+    // Return reordered notes for confirmation
+    const reorderedNotes = await Note.find({ _id: { $in: data.noteOrders.map(n => n.noteId) }, userId: req.user.id }).sort({ order: 1 });
+    sendSuccessResponse(res, { notes: reorderedNotes.map(n => n.toJSON()) }, 'Notes reordered');
+  } catch (error) {
+    sendErrorResponse(res, 'Failed to reorder notes', 500);
+  }
+});
 // Search notes
 router.get('/search', async (req, res) => {
   try {

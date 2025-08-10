@@ -44,6 +44,11 @@ const noteSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  order: {
+    type: Number,
+    default: 0,
+    required: true
+  },
   lastEditedAt: {
     type: Date,
     default: Date.now
