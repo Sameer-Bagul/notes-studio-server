@@ -8,9 +8,18 @@ const router = express.Router();
 // Get all deployed (public) folders
 router.get('/folders', async (req, res) => {
   try {
-    const { includeNoteCount = 'true' } = req.query;
-    const folders = await Folder.find({ isDeployed: true })
-      .populate('userId', 'name email')
+    const { includeNoteCount = 'true', username } = req.query;
+    let userFilter = {};
+    if (username) {
+      // Find user by username
+      const user = await (await import('../models/User.js')).default.findOne({ username: username.trim() });
+      if (!user) {
+        return sendSuccessResponse(res, { folders: [] });
+      }
+      userFilter.userId = user._id;
+    }
+    const folders = await Folder.find({ isDeployed: true, ...userFilter })
+      .populate('userId', 'name email username')
       .sort({ createdAt: -1 })
       .lean();
     if (!folders || folders.length === 0) {
@@ -38,13 +47,23 @@ router.get('/folders', async (req, res) => {
 // Get public folder by slug with notes
 router.get('/folders/:slug', async (req, res) => {
   try {
-    const { page = 1, limit = 12, search = '', sortBy = 'updatedAt', order = 'desc' } = req.query;
+    const { page = 1, limit = 12, search = '', sortBy = 'updatedAt', order = 'desc', username } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    let userFilter = {};
+    if (username) {
+      // Find user by username
+      const user = await (await import('../models/User.js')).default.findOne({ username: username.trim() });
+      if (!user) {
+        return sendErrorResponse(res, 'Public folder not found', 404);
+      }
+      userFilter.userId = user._id;
+    }
     const folder = await Folder.findOne({
       slug: req.params.slug,
-      isDeployed: true
+      isDeployed: true,
+      ...userFilter
     })
-      .populate('userId', 'name email')
+      .populate('userId', 'name email username')
       .lean();
     if (!folder) {
       return sendErrorResponse(res, 'Public folder not found', 404);
@@ -64,13 +83,13 @@ router.get('/folders/:slug', async (req, res) => {
     const sortObj = {};
     sortObj[sortBy] = sortOrder;
     const [notes, total] = await Promise.all([
-      Note.find(notesQuery)
-        .populate('userId', 'name email')
+      Note.find({ ...notesQuery, ...userFilter })
+        .populate('userId', 'name email username')
         .sort(sortObj)
         .skip(skip)
         .limit(parseInt(limit))
         .lean(),
-      Note.countDocuments(notesQuery)
+      Note.countDocuments({ ...notesQuery, ...userFilter })
     ]);
     const response = {
       folder: {

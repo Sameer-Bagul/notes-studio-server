@@ -1,3 +1,4 @@
+
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -12,15 +13,44 @@ import { sendSuccessResponse, sendErrorResponse } from '../utils/responseHelper.
 
 const router = express.Router();
 
+
+// Check username availability (for registration)
+router.get('/username-available', async (req, res) => {
+  try {
+    const { username } = req.query;
+    if (!username || typeof username !== 'string' || username.trim().length < 3) {
+      return res.status(400).json({ success: false, message: 'Invalid username' });
+    }
+    const user = await (await import('../models/User.js')).default.findOne({ username: username.trim() });
+    if (user) {
+      return res.json({ success: true, available: false });
+    }
+    return res.json({ success: true, available: true });
+  } catch (error) {
+    console.error('Username availability check error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to check username' });
+  }
+});
+
 // Register new user
 router.post('/register', validate(registerSchema), async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { username, name, email, password } = req.body;
+    // Validate username
+    if (!username || typeof username !== 'string' || username.trim().length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+      return sendErrorResponse(res, 'Invalid or missing username', 400);
+    }
+    // Check for duplicate username
+    const existingUsername = await User.findOne({ username: username.trim() });
+    if (existingUsername) {
+      return sendErrorResponse(res, 'Username already taken', 400);
+    }
+    // Check for duplicate email
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return sendErrorResponse(res, 'User already exists with this email', 400);
     }
-    const user = new User({ name, email, password });
+    const user = new User({ username: username.trim(), name, email, password });
     await user.save();
 
     // Create default folder and welcome note for new user
@@ -54,6 +84,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
       token,
       user: {
         id: user._id,
+        username: user.username,
         name: user.name,
         email: user.email,
         preferences: user.preferences,
