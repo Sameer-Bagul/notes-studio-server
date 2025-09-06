@@ -28,7 +28,8 @@ const createApp = () => {
           'https://notes-studio.sameerbagul.me/',
           'https://preview--rich-text-refuge-21.lovable.app',
           'https://lovable.dev/projects/7ffc87a7-3a0e-487a-ba05-c1fb1a6746dc',
-          'http://192.168.1.3:8080'
+          'http://192.168.1.3:8080',
+          'https://lovable.dev/projects/6cc3d684-d546-4a13-bc4d-4860a4ccc5de'
         ]
       : process.env.CORS_ORIGIN || 'http://localhost:3000',
     credentials: true,
