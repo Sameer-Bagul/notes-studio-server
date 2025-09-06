@@ -17,25 +17,39 @@ const createApp = () => {
     res.send('Notes Studio API server is up and running!');
   });
   app.use(helmet());
-  app.use(cors({
-    origin: process.env.NODE_ENV === 'development'
-      ? [
-          'http://localhost:3000',
-          'http://localhost:8080',
-          'http://localhost:8081',
-          'http://localhost:5173',
-          'http://localhost:4173',
-          'https://notesync.sameerbagul.me',
-          'https://preview--rich-text-refuge-21.lovable.app',
-          'https://lovable.dev/projects/7ffc87a7-3a0e-487a-ba05-c1fb1a6746dc',
-          'http://192.168.1.3:8080',
-          'https://lovable.dev/projects/6cc3d684-d546-4a13-bc4d-4860a4ccc5de'
-        ]
-      : process.env.CORS_ORIGIN || 'http://localhost:3000',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  }));
+  // Dynamic CORS setup for multiple origins
+  let allowedOrigins = [];
+  if (process.env.NODE_ENV === 'development') {
+    allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:8080',
+      'http://localhost:8081',
+      'http://localhost:5173',
+      'http://localhost:4173',
+      'https://notesync.sameerbagul.me',
+      'https://preview--rich-text-refuge-21.lovable.app',
+      'https://lovable.dev/projects/7ffc87a7-3a0e-487a-ba05-c1fb1a6746dc',
+      'http://192.168.1.3:8080',
+      'https://lovable.dev/projects/6cc3d684-d546-4a13-bc4d-4860a4ccc5de'
+    ];
+  } else {
+    allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim()).filter(Boolean);
+  }
+  app.use(
+    cors({
+      origin: function (origin, callback) {
+        if (!origin) return callback(null, true); // Allow non-browser requests (e.g., Postman)
+        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        } else {
+          return callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    })
+  );
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(compression());
