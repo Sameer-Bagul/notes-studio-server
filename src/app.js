@@ -17,10 +17,20 @@ const createApp = () => {
     res.send('Notes Studio API server is up and running!');
   });
   app.use(helmet());
-  // Temporary CORS configuration for debugging: allow all origins
+  // CORS configuration using CORS_ORIGIN environment variable
+  const corsOrigin = process.env.CORS_ORIGIN;
+  console.log('🔧 CORS_ORIGIN env var:', corsOrigin);
+  let origin;
+  if (!corsOrigin) {
+    console.log('⚠️  CORS_ORIGIN not set, allowing all origins');
+    origin = true; // Allow all origins if CORS_ORIGIN is not set
+  } else {
+    origin = corsOrigin.split(',').map(o => o.trim()); // Parse as comma-separated list
+    console.log('✅ CORS Origin configured:', origin);
+  }
   app.use(
     cors({
-      origin: true,
+      origin,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
