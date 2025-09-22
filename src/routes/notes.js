@@ -109,7 +109,14 @@ router.put('/:id', validate(updateNoteSchema), async (req, res) => {
     console.log('🔄 Update Note Request:', {
       id: req.params.id,
       userId: req.user.id,
-      body: req.body
+      bodyKeys: Object.keys(req.body),
+      contentLength: req.body.content ? req.body.content.length : 0,
+      hasHtml: req.body.content ? /<[^>]*>/.test(req.body.content) : false
+    });
+    console.log('🔄 Request headers:', {
+      'content-type': req.get('Content-Type'),
+      'authorization': req.get('Authorization') ? 'present' : 'missing',
+      origin: req.get('Origin')
     });
     const note = await Note.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
