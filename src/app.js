@@ -28,9 +28,20 @@ const createApp = () => {
     origin = corsOrigin.split(',').map(o => o.trim()); // Parse as comma-separated list
     console.log('✅ CORS Origin configured:', origin);
   }
+
   app.use(
     cors({
-      origin,
+      origin: function (origin, callback) {
+      // allow requests with no origin (like Postman or server-to-server)
+      if (!origin) return callback(null, true);
+      
+      // allow if origin is in the allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error(`CORS policy: Not allowed - ${origin}`));
+      }
+    },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
