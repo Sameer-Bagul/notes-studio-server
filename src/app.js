@@ -13,46 +13,24 @@ import publicRoutes from './routes/public.js';
 const createApp = () => {
   const app = express();
   app.set('trust proxy', 1);
+
+  // ✅ Root route
   app.get('/', (req, res) => {
     res.send('Notes Studio API server is up and running!');
   });
-  app.use(helmet());
-  // CORS configuration using CORS_ORIGIN environment variable
-  const corsOrigin = process.env.CORS_ORIGIN;
-  console.log('🔧 CORS_ORIGIN env var:', corsOrigin);
-  let origin;
-  if (!corsOrigin) {
-    console.log('⚠️  CORS_ORIGIN not set, allowing all origins');
-    origin = true; // Allow all origins if CORS_ORIGIN is not set
-  } else {
-    origin = corsOrigin.split(',').map(o => o.trim()); // Parse as comma-separated list
-    console.log('✅ CORS Origin configured:', origin);
-  }
 
-  app.use(
-    cors({
-      origin: function (origin, callback) {
-      // allow requests with no origin (like Postman or server-to-server)
-      if (!origin) return callback(null, true);
-      
-      // allow if origin is in the allowed list
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        return callback(new Error(`CORS policy: Not allowed - ${origin}`));
-      }
-    },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-    })
-  );
+  // ✅ Security middleware
+  app.use(helmet());
+  app.use(compression());
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-  app.use(compression());
+
+  // ✅ Logging
   if (process.env.NODE_ENV !== 'test') {
     app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
   }
+
+  // ✅ Rate Limiting
   const limiter = rateLimit({
     windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW) || 15) * 60 * 1000,
     max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
@@ -64,6 +42,45 @@ const createApp = () => {
     legacyHeaders: false,
   });
   app.use(limiter);
+
+  // ✅ CORS Setup
+  const corsOrigin = process.env.CORS_ORIGIN;
+  console.log('🔧 CORS_ORIGIN env var:', corsOrigin);
+
+  let allowedOrigins;
+  if (!corsOrigin) {
+    console.log('⚠️  CORS_ORIGIN not set — using safe defaults');
+    allowedOrigins = [
+      'https://www.sameerbagul.me',
+      'https://notesync.sameerbagul.me',
+      'https://sameerbagul.vercel.app',
+      'http://localhost:8080',
+      'http://localhost:3000'
+    ];
+  } else {
+    allowedOrigins = corsOrigin.split(',').map(o => o.trim());
+  }
+  console.log('✅ CORS allowed origins:', allowedOrigins);
+
+  app.use(
+    cors({
+      origin: function (origin, callback) {
+        // Allow Postman / server-to-server
+        if (!origin) return callback(null, true);
+        if (allowedOrigins === true || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        } else {
+          console.log(`🚫 Blocked by CORS: ${origin}`);
+          return callback(new Error(`CORS policy: Not allowed - ${origin}`));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    })
+  );
+
+  // ✅ Health check
   app.get('/health', (req, res) => {
     res.json({
       success: true,
@@ -72,16 +89,19 @@ const createApp = () => {
       environment: process.env.NODE_ENV
     });
   });
-  app.get('/favicon.ico', (req, res) => {
-    res.status(204).end();
-  });
+
+  // ✅ Routes
   app.use('/api/auth', authRoutes);
   app.use('/api/notes', noteRoutes);
   app.use('/api/folders', folderRoutes);
   app.use('/api/public', publicRoutes);
   app.use('/uploads', express.static('uploads'));
+
+  // ✅ Error handlers
   app.use(notFound);
   app.use(errorHandler);
+
+  // ✅ Fallback 404
   app.use('*', (req, res) => {
     res.status(404).json({
       success: false,
@@ -89,6 +109,7 @@ const createApp = () => {
       error: `Not Found - ${req.originalUrl}`
     });
   });
+
   return app;
 };
 
