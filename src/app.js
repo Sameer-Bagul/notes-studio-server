@@ -43,31 +43,25 @@ const createApp = () => {
   });
   app.use(limiter);
 
-  // ✅ CORS Setup
-  const corsOrigin = process.env.CORS_ORIGIN;
-  console.log('🔧 CORS_ORIGIN env var:', corsOrigin);
+  // ✅ Hardcoded CORS setup
+  const allowedOrigins = [
+    'https://www.sameerbagul.me',
+    'https://notesync.sameerbagul.me',
+    'https://sameerbagul.vercel.app',
+    'http://localhost:8080',
+    'http://localhost:3000'
+  ];
 
-  let allowedOrigins;
-  if (!corsOrigin) {
-    console.log('⚠️  CORS_ORIGIN not set — using safe defaults');
-    allowedOrigins = [
-      'https://www.sameerbagul.me',
-      'https://notesync.sameerbagul.me',
-      'https://sameerbagul.vercel.app',
-      'http://localhost:8080',
-      'http://localhost:3000'
-    ];
-  } else {
-    allowedOrigins = corsOrigin.split(',').map(o => o.trim());
-  }
-  console.log('✅ CORS allowed origins:', allowedOrigins);
+  console.log('✅ Allowed CORS origins:', allowedOrigins);
 
   app.use(
     cors({
       origin: function (origin, callback) {
-        // Allow Postman / server-to-server
+        // Allow requests without origin (e.g. Postman, server-to-server)
         if (!origin) return callback(null, true);
-        if (allowedOrigins === true || allowedOrigins.includes(origin)) {
+
+        // Match allowed origins
+        if (allowedOrigins.some(o => o.toLowerCase() === origin.toLowerCase().trim())) {
           return callback(null, true);
         } else {
           console.log(`🚫 Blocked by CORS: ${origin}`);
